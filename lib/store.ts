@@ -1,13 +1,24 @@
-import type { Mensagem, Profile, Swipe, Vaga } from "./types";
+import type {
+  BadgeConquistado,
+  Empresa,
+  LikeEmpresa,
+  Mensagem,
+  Profile,
+  Swipe,
+  Talento,
+  Vaga,
+} from "./types";
 import { deviceId, novoId } from "./uid";
-import seed from "./seed-data.json";
+import seedVagas from "./seed-data.json";
+import seedEmpresas from "./seed-empresas.json";
+import seedTalentos from "./seed-talentos.json";
 
 /**
- * Camada de dados com dois modos:
- *  - LocalStore (padrão): tudo em localStorage + vagas do seed. Zero backend.
- *  - SupabaseStore: ativado automaticamente quando NEXT_PUBLIC_SUPABASE_URL
- *    e NEXT_PUBLIC_SUPABASE_ANON_KEY existem. Mesma interface.
- * Migrations SQL em supabase/migrations/ — o schema espelha estes tipos.
+ * Camada de dados local-first.
+ *  - Núcleo do candidato (profile/swipes/mensagens) tem par Supabase
+ *    (migrations em supabase/) e liga via env vars.
+ *  - Entidades novas (empresas, talentos, badges, CRUD de vagas,
+ *    hunter/admin) são locais no MVP — contrato pronto p/ nuvem.
  */
 export interface Store {
   getVagas(): Promise<Vaga[]>;
@@ -20,13 +31,28 @@ export interface Store {
   getMensagens(swipeId: string): Promise<Mensagem[]>;
   addMensagem(m: Omit<Mensagem, "id" | "created_at">): Promise<Mensagem>;
   clearAll(): Promise<void>;
+  // --- v2 ---
+  getEmpresas(): Promise<Empresa[]>;
+  getTalentos(): Promise<Talento[]>;
+  addVaga(v: Omit<Vaga, "id" | "created_at">): Promise<Vaga>;
+  updateVaga(id: string, patch: Partial<Vaga>): Promise<void>;
+  getBadges(): Promise<BadgeConquistado[]>;
+  addBadge(badgeId: string): Promise<void>;
+  getShortlist(): Promise<string[]>;
+  toggleShortlist(talentoId: string): Promise<string[]>;
+  getLikesEmpresa(): Promise<LikeEmpresa[]>;
+  likeTalento(empresaId: string, talentoId: string): Promise<void>;
 }
 
-// ---------------------------------------------------------------- local
 const K = {
   profile: "trampolim:profile",
   swipes: "trampolim:swipes",
   msgs: "trampolim:mensagens",
+  badges: "trampolim:badges",
+  vagasCustom: "trampolim:vagas_custom",
+  vagasPatch: "trampolim:vagas_patch",
+  shortlist: "trampolim:shortlist",
+  likesEmpresa: "trampolim:likes_empresa",
 };
 
 function lsGet<T>(key: string, fallback: T): T {
@@ -42,13 +68,29 @@ function lsSet(key: string, value: unknown) {
   localStorage.setItem(key, JSON.stringify(value));
 }
 
+// ---------------------------------------------------------------- local
 class LocalStore implements Store {
   async getVagas(): Promise<Vaga[]> {
-    return seed as Vaga[];
+    const custom = lsGet<Vaga[]>(K.vagasCustom, []);
+    const patch = lsGet<Record<string, Partial<Vaga>>>(K.vagasPatch, {});
+    const base = (seedVagas as Vaga[]).map((v) =>
+      patch[v.id] ? { ...v, ...patch[v.id] } : v,
+    );
+    const custom2 = custom.map((v) =>
+      patch[v.id] ? { ...v, ...patch[v.id] } : v,
+    );
+    return [...custom2, ...base];
   }
 
   async getProfile(): Promise<Profile | null> {
-    return lsGet<Profile | null>(K.profile, null);
+    const p = lsGet<Profile | null>(K.profile, null);
+    if (!p) return null;
+    return {
+      experiencias: [],
+      formacao: [],
+      idiomas: [],
+      ...p,
+    };
   }
 
   async saveProfile(p: Profile): Promise<void> {
@@ -101,11 +143,72 @@ class LocalStore implements Store {
   async clearAll(): Promise<void> {
     Object.values(K).forEach((k) => localStorage.removeItem(k));
   }
+
+  // --- v2 ---
+  async getEmpresas(): Promise<Empresa[]> {
+    return seedEmpresas as Empresa[];
+  }
+
+  async getTalentos(): Promise<Talento[]> {
+    return seedTalentos as Talento[];
+  }
+
+  async addVaga(v: Omit<Vaga, "id" | "created_at">): Promise<Vaga> {
+    const vaga: Vaga = { ...v, id: novoId(), created_at: new Date().toISOString() };
+    lsSet(K.vagasCustom, [vaga, ...lsGet<Vaga[]>(K.vagasCustom, [])]);
+    return vaga;
+  }
+
+  async updateVaga(id: string, patch: Partial<Vaga>): Promise<void> {
+    const patches = lsGet<Record<string, Partial<Vaga>>>(K.vagasPatch, {});
+    patches[id] = { ...patches[id], ...patch };
+    lsSet(K.vagasPatch, patches);
+  }
+
+  async getBadges(): Promise<BadgeConquistado[]> {
+    return lsGet<BadgeConquistado[]>(K.badges, []);
+  }
+
+  async addBadge(badgeId: string): Promise<void> {
+    const all = await this.getBadges();
+    if (all.some((b) => b.badge_id === badgeId)) return;
+    lsSet(K.badges, [...all, { badge_id: badgeId, em: new Date().toISOString() }]);
+  }
+
+  async getShortlist(): Promise<string[]> {
+    return lsGet<string[]>(K.shortlist, []);
+  }
+
+  async toggleShortlist(talentoId: string): Promise<string[]> {
+    const atual = await this.getShortlist();
+    const nova = atual.includes(talentoId)
+      ? atual.filter((t) => t !== talentoId)
+      : [...atual, talentoId];
+    lsSet(K.shortlist, nova);
+    return nova;
+  }
+
+  async getLikesEmpresa(): Promise<LikeEmpresa[]> {
+    return lsGet<LikeEmpresa[]>(K.likesEmpresa, []);
+  }
+
+  async likeTalento(empresaId: string, talentoId: string): Promise<void> {
+    const all = await this.getLikesEmpresa();
+    if (all.some((l) => l.empresa_id === empresaId && l.talento_id === talentoId))
+      return;
+    lsSet(K.likesEmpresa, [
+      ...all,
+      { empresa_id: empresaId, talento_id: talentoId, em: new Date().toISOString() },
+    ]);
+  }
 }
 
 // ------------------------------------------------------------- supabase
-class SupabaseStore implements Store {
-  // Import dinâmico para o bundle local não pagar pelo supabase-js.
+/**
+ * Núcleo candidato na nuvem; entidades v2 delegam ao LocalStore até a
+ * fase 2 (ver README > Roadmap).
+ */
+class SupabaseStore extends LocalStore {
   private async client() {
     const { createClient } = await import("@supabase/supabase-js");
     return createClient(
@@ -114,7 +217,7 @@ class SupabaseStore implements Store {
     );
   }
 
-  async getVagas(): Promise<Vaga[]> {
+  override async getVagas(): Promise<Vaga[]> {
     const supa = await this.client();
     const { data, error } = await supa
       .from("trampolim_vagas")
@@ -124,7 +227,7 @@ class SupabaseStore implements Store {
     return data as Vaga[];
   }
 
-  async getProfile(): Promise<Profile | null> {
+  override async getProfile(): Promise<Profile | null> {
     const supa = await this.client();
     const { data } = await supa
       .from("trampolim_profiles")
@@ -134,7 +237,7 @@ class SupabaseStore implements Store {
     return (data as Profile) ?? null;
   }
 
-  async saveProfile(p: Profile): Promise<void> {
+  override async saveProfile(p: Profile): Promise<void> {
     const supa = await this.client();
     const { error } = await supa
       .from("trampolim_profiles")
@@ -142,7 +245,7 @@ class SupabaseStore implements Store {
     if (error) throw error;
   }
 
-  async getSwipes(): Promise<Swipe[]> {
+  override async getSwipes(): Promise<Swipe[]> {
     const supa = await this.client();
     const { data, error } = await supa
       .from("trampolim_swipes")
@@ -152,31 +255,30 @@ class SupabaseStore implements Store {
     return data as Swipe[];
   }
 
-  async addSwipe(s: Omit<Swipe, "id" | "created_at" | "user_id">): Promise<Swipe> {
+  override async addSwipe(
+    s: Omit<Swipe, "id" | "created_at" | "user_id">,
+  ): Promise<Swipe> {
     const supa = await this.client();
     const { data, error } = await supa
       .from("trampolim_swipes")
-      .upsert(
-        { ...s, user_id: deviceId() },
-        { onConflict: "user_id,vaga_id" },
-      )
+      .upsert({ ...s, user_id: deviceId() }, { onConflict: "user_id,vaga_id" })
       .select()
       .single();
     if (error) throw error;
     return data as Swipe;
   }
 
-  async removeSwipe(id: string): Promise<void> {
+  override async removeSwipe(id: string): Promise<void> {
     const supa = await this.client();
     await supa.from("trampolim_swipes").delete().eq("id", id);
   }
 
-  async resetSwipes(): Promise<void> {
+  override async resetSwipes(): Promise<void> {
     const supa = await this.client();
     await supa.from("trampolim_swipes").delete().eq("user_id", deviceId());
   }
 
-  async getMensagens(swipeId: string): Promise<Mensagem[]> {
+  override async getMensagens(swipeId: string): Promise<Mensagem[]> {
     const supa = await this.client();
     const { data, error } = await supa
       .from("trampolim_mensagens")
@@ -187,7 +289,9 @@ class SupabaseStore implements Store {
     return data as Mensagem[];
   }
 
-  async addMensagem(m: Omit<Mensagem, "id" | "created_at">): Promise<Mensagem> {
+  override async addMensagem(
+    m: Omit<Mensagem, "id" | "created_at">,
+  ): Promise<Mensagem> {
     const supa = await this.client();
     const { data, error } = await supa
       .from("trampolim_mensagens")
@@ -198,11 +302,12 @@ class SupabaseStore implements Store {
     return data as Mensagem;
   }
 
-  async clearAll(): Promise<void> {
+  override async clearAll(): Promise<void> {
     const supa = await this.client();
     const uid = deviceId();
     await supa.from("trampolim_swipes").delete().eq("user_id", uid);
     await supa.from("trampolim_profiles").delete().eq("id", uid);
+    await super.clearAll();
     localStorage.removeItem("trampolim:device_id");
   }
 }

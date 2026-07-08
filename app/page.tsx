@@ -1,16 +1,27 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
-import type { Direcao, Profile, ScoreResult, Swipe, Vaga } from "@/lib/types";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import type {
+  BadgeConquistado,
+  Direcao,
+  Empresa,
+  Profile,
+  ScoreResult,
+  Swipe,
+  Vaga,
+} from "@/lib/types";
 import { store } from "@/lib/store";
 import { calcularScore, decidirMatch, mensagemBoasVindas } from "@/lib/match";
+import { avaliarBadges, BADGE_MAP, type BadgeDef } from "@/lib/badges";
 import Onboarding from "@/components/Onboarding";
 import Deck, { type Carta } from "@/components/Deck";
 import MatchModal from "@/components/MatchModal";
 import Matches from "@/components/Matches";
 import Chat from "@/components/Chat";
 import ProfileView from "@/components/Profile";
+import BadgeUnlock from "@/components/BadgeUnlock";
 import TabBar, { type Tab } from "@/components/TabBar";
+import { Avatar } from "@/components/ui";
 
 type Fase = "carregando" | "onboarding" | "app";
 
@@ -18,23 +29,31 @@ export default function Home() {
   const [fase, setFase] = useState<Fase>("carregando");
   const [profile, setProfile] = useState<Profile | null>(null);
   const [vagas, setVagas] = useState<Vaga[]>([]);
+  const [empresas, setEmpresas] = useState<Record<string, Empresa>>({});
   const [swipes, setSwipes] = useState<Swipe[]>([]);
+  const [badges, setBadges] = useState<BadgeConquistado[]>([]);
+  const [filaBadges, setFilaBadges] = useState<BadgeDef[]>([]);
   const [tab, setTab] = useState<Tab>("vagas");
   const [match, setMatch] = useState<{ vaga: Vaga; swipe: Swipe } | null>(null);
   const [chat, setChat] = useState<{ swipe: Swipe; vaga: Vaga } | null>(null);
   const [editando, setEditando] = useState(false);
+  const checandoBadges = useRef(false);
 
   useEffect(() => {
     (async () => {
       try {
-        const [p, v, s] = await Promise.all([
+        const [p, v, s, e, b] = await Promise.all([
           store.getProfile(),
           store.getVagas(),
           store.getSwipes(),
+          store.getEmpresas(),
+          store.getBadges(),
         ]);
         setVagas(v);
         setSwipes(s);
         setProfile(p);
+        setEmpresas(Object.fromEntries(e.map((emp) => [emp.id, emp])));
+        setBadges(b);
         setFase(p ? "app" : "onboarding");
       } catch (e) {
         console.error("Falha ao carregar dados", e);
@@ -43,11 +62,36 @@ export default function Home() {
     })();
   }, []);
 
+  /** Motor de conquistas: roda após qualquer mudança relevante. */
+  const checarBadges = useCallback(
+    async (p: Profile | null, s: Swipe[], v: Vaga[]) => {
+      if (checandoBadges.current) return;
+      checandoBadges.current = true;
+      try {
+        const merecidas = avaliarBadges(p, s, v);
+        const atuais = await store.getBadges();
+        const tem = new Set(atuais.map((b) => b.badge_id));
+        const novas = merecidas.filter((id) => !tem.has(id));
+        if (novas.length) {
+          for (const id of novas) await store.addBadge(id);
+          setBadges(await store.getBadges());
+          setFilaBadges((fila) => [
+            ...fila,
+            ...novas.map((id) => BADGE_MAP[id]).filter(Boolean),
+          ]);
+        }
+      } finally {
+        checandoBadges.current = false;
+      }
+    },
+    [],
+  );
+
   const cartas: Carta[] = useMemo(() => {
     if (!profile) return [];
     const swipadas = new Set(swipes.map((s) => s.vaga_id));
     return vagas
-      .filter((v) => !swipadas.has(v.id))
+      .filter((v) => v.ativa && !swipadas.has(v.id))
       .map((vaga) => ({ vaga, score: calcularScore(profile, vaga) }))
       .sort((a, b) => b.score.score - a.score.score);
   }, [profile, vagas, swipes]);
@@ -57,8 +101,7 @@ export default function Home() {
   const aoSwipe = useCallback(
     async (vaga: Vaga, direcao: Direcao, score: ScoreResult) => {
       if (!profile) return;
-      const matched =
-        direcao !== "nope" && decidirMatch(direcao, score.score);
+      const matched = direcao !== "nope" && decidirMatch(direcao, score.score);
       const swipe = await store.addSwipe({
         vaga_id: vaga.id,
         direcao,
@@ -66,7 +109,8 @@ export default function Home() {
         matched,
         status: matched ? "match" : direcao === "nope" ? "descartada" : "em_analise",
       });
-      setSwipes((prev) => [...prev.filter((s) => s.vaga_id !== vaga.id), swipe]);
+      const novos = [...swipes.filter((s) => s.vaga_id !== vaga.id), swipe];
+      setSwipes(novos);
       if (matched) {
         await store.addMensagem({
           swipe_id: swipe.id,
@@ -75,8 +119,9 @@ export default function Home() {
         });
         setMatch({ vaga, swipe });
       }
+      checarBadges(profile, novos, vagas);
     },
-    [profile],
+    [profile, swipes, vagas, checarBadges],
   );
 
   const aoRewind = useCallback(async () => {
@@ -94,6 +139,7 @@ export default function Home() {
     setEditando(false);
     setFase("app");
     setTab("vagas");
+    checarBadges(p, swipes, vagas);
   }
 
   async function zerarDeck() {
@@ -104,10 +150,11 @@ export default function Home() {
   }
 
   async function apagarTudo() {
-    if (!confirm("Apagar perfil, matches e conversas? Não tem volta.")) return;
+    if (!confirm("Apagar perfil, matches, badges e conversas? Não tem volta.")) return;
     await store.clearAll();
     setProfile(null);
     setSwipes([]);
+    setBadges([]);
     setFase("onboarding");
     setTab("vagas");
   }
@@ -116,7 +163,7 @@ export default function Home() {
   if (fase === "carregando") {
     return (
       <div className="flex min-h-dvh items-center justify-center">
-        <div className="anim-pop flex h-20 w-20 items-center justify-center rounded-[24px] border border-volt/40 bg-card text-4xl">
+        <div className="anim-pop acc-glow flex h-20 w-20 items-center justify-center rounded-[24px] border acc-border bg-card text-4xl">
           🤸
         </div>
       </div>
@@ -124,12 +171,7 @@ export default function Home() {
   }
 
   if (fase === "onboarding" || editando) {
-    return (
-      <Onboarding
-        inicial={editando ? profile : null}
-        onDone={salvarPerfil}
-      />
-    );
+    return <Onboarding inicial={editando ? profile : null} onDone={salvarPerfil} />;
   }
 
   if (!profile) return null;
@@ -138,38 +180,50 @@ export default function Home() {
     <div className="relative z-10 min-h-dvh">
       {tab === "vagas" && (
         <div
-          className="mx-auto flex max-w-md flex-col px-5 pt-[calc(env(safe-area-inset-top)+1rem)]"
+          key="vagas"
+          className="anim-rise mx-auto flex max-w-md flex-col px-5 pt-[calc(env(safe-area-inset-top)+1rem)]"
           style={{ height: "calc(100dvh - 68px)" }}
         >
           <header className="mb-3 flex items-center justify-between">
             <h1 className="font-[family-name:var(--font-display)] text-lg font-black">
               TRAMPO<span className="text-volt">LIM</span>
             </h1>
-            <span className="rounded-full border border-line bg-card px-3 py-1 text-[11px] font-bold text-muted">
-              {cartas.length} {cartas.length === 1 ? "vaga" : "vagas"}
-            </span>
+            <div className="flex items-center gap-2">
+              <span className="rounded-full border border-line bg-card px-3 py-1 text-[11px] font-bold text-muted">
+                {cartas.length} {cartas.length === 1 ? "vaga" : "vagas"}
+              </span>
+              <button onClick={() => setTab("perfil")} aria-label="Abrir perfil">
+                <Avatar foto={profile.foto} emoji={profile.emoji} size={34} />
+              </button>
+            </div>
           </header>
 
           {cartas.length > 0 ? (
             <Deck
               cartas={cartas}
+              empresas={empresas}
               onSwipe={aoSwipe}
               onRewind={aoRewind}
               podeRewind={swipes.length > 0}
             />
           ) : (
             <div className="flex flex-1 flex-col items-center justify-center pb-16 text-center">
-              <p className="anim-float text-6xl">🏖️</p>
-              <p className="mt-5 font-[family-name:var(--font-display)] text-lg font-bold">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src="/hero-calm.png"
+                alt=""
+                className="anim-float w-52 rounded-3xl opacity-90"
+                style={{ maskImage: "radial-gradient(80% 80% at 50% 45%, #000 55%, transparent 100%)" }}
+              />
+              <p className="mt-3 font-[family-name:var(--font-display)] text-lg font-bold">
                 Você viu tudo por aqui!
               </p>
               <p className="mt-2 max-w-[240px] text-sm text-muted">
-                Novas vagas chegam todo dia. Enquanto isso, confira seus
-                matches.
+                Novas vagas chegam todo dia. Enquanto isso, confira seus matches.
               </p>
               <button
                 onClick={() => setTab("matches")}
-                className="mt-6 rounded-2xl bg-volt px-6 py-3 font-[family-name:var(--font-display)] text-xs font-bold text-bg transition active:scale-95"
+                className="acc-bg mt-6 rounded-2xl px-6 py-3 font-[family-name:var(--font-display)] text-xs font-bold transition active:scale-95"
               >
                 VER MATCHES ({totalMatches})
               </button>
@@ -179,21 +233,27 @@ export default function Home() {
       )}
 
       {tab === "matches" && (
-        <Matches
-          swipes={swipes}
-          vagas={vagas}
-          onAbrirChat={(swipe, vaga) => setChat({ swipe, vaga })}
-        />
+        <div key="matches" className="anim-rise">
+          <Matches
+            swipes={swipes}
+            vagas={vagas}
+            empresas={empresas}
+            onAbrirChat={(swipe, vaga) => setChat({ swipe, vaga })}
+          />
+        </div>
       )}
 
       {tab === "perfil" && (
-        <ProfileView
-          profile={profile}
-          swipes={swipes}
-          onEditar={() => setEditando(true)}
-          onZerarDeck={zerarDeck}
-          onApagarTudo={apagarTudo}
-        />
+        <div key="perfil" className="anim-rise">
+          <ProfileView
+            profile={profile}
+            swipes={swipes}
+            badges={badges}
+            onEditar={() => setEditando(true)}
+            onZerarDeck={zerarDeck}
+            onApagarTudo={apagarTudo}
+          />
+        </div>
       )}
 
       <TabBar tab={tab} onChange={setTab} badgeMatches={totalMatches} />
@@ -202,6 +262,7 @@ export default function Home() {
         <MatchModal
           vaga={match.vaga}
           emojiUsuario={profile.emoji}
+          fotoUsuario={profile.foto}
           score={match.swipe.score}
           onMensagem={() => {
             setChat({ swipe: match.swipe, vaga: match.vaga });
@@ -212,10 +273,13 @@ export default function Home() {
       )}
 
       {chat && (
-        <Chat
-          swipe={chat.swipe}
-          vaga={chat.vaga}
-          onVoltar={() => setChat(null)}
+        <Chat swipe={chat.swipe} vaga={chat.vaga} onVoltar={() => setChat(null)} />
+      )}
+
+      {!match && filaBadges.length > 0 && (
+        <BadgeUnlock
+          badge={filaBadges[0]}
+          onFechar={() => setFilaBadges((f) => f.slice(1))}
         />
       )}
     </div>
