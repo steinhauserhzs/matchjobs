@@ -1,4 +1,4 @@
-const KEY = "trampolim:device_id";
+const KEY = "matchjobs:device_id";
 
 /** Identidade anônima por dispositivo (MVP sem login). */
 export function deviceId(): string {

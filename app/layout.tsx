@@ -15,17 +15,17 @@ const sora = Sora({
 });
 
 export const metadata: Metadata = {
-  title: "Trampolim — deslize pro trampo certo",
+  title: "MatchJobs — deslize pro trampo certo",
   description:
     "O Tinder das vagas: deslize, dê match e converse com quem quer te contratar. Chega de formulário infinito.",
-  applicationName: "Trampolim",
+  applicationName: "MatchJobs",
   appleWebApp: {
     capable: true,
     statusBarStyle: "black-translucent",
-    title: "Trampolim",
+    title: "MatchJobs",
   },
   openGraph: {
-    title: "Trampolim — deslize pro trampo certo",
+    title: "MatchJobs — deslize pro trampo certo",
     description:
       "O Tinder das vagas: deslize, dê match e converse com quem quer te contratar.",
     locale: "pt_BR",

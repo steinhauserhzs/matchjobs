@@ -164,7 +164,7 @@ export default function Home() {
     return (
       <div className="flex min-h-dvh items-center justify-center">
         <div className="anim-pop acc-glow flex h-20 w-20 items-center justify-center rounded-[24px] border acc-border bg-card text-4xl">
-          🤸
+          💚
         </div>
       </div>
     );
@@ -186,7 +186,7 @@ export default function Home() {
         >
           <header className="mb-3 flex items-center justify-between">
             <h1 className="font-[family-name:var(--font-display)] text-lg font-black">
-              TRAMPO<span className="text-volt">LIM</span>
+              MATCH<span className="text-volt">JOBS</span>
             </h1>
             <div className="flex items-center gap-2">
               <span className="rounded-full border border-line bg-card px-3 py-1 text-[11px] font-bold text-muted">

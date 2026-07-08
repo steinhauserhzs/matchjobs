@@ -17,7 +17,7 @@ import {
   Stat,
 } from "@/components/ui";
 
-const K_ATIVA = "trampolim:empresa_ativa";
+const K_ATIVA = "matchjobs:empresa_ativa";
 type Aba = "geral" | "vagas" | "candidatos";
 
 function perfilDe(t: Talento): Profile {

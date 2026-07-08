@@ -159,7 +159,7 @@ export default function Onboarding({
           />
 
           <h1 className="anim-rise -mt-4 font-[family-name:var(--font-display)] text-[34px] font-black leading-none">
-            TRAMPO<span className="grad-text">LIM</span>
+            MATCH<span className="grad-text">JOBS</span>
           </h1>
           <p
             className="anim-rise mt-4 max-w-[270px] text-[15px] leading-relaxed text-muted"

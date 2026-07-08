@@ -310,7 +310,7 @@ export function PortalShell({
             href="/"
             className="text-[11px] font-bold uppercase tracking-widest text-muted transition hover:text-ink"
           >
-            ← Trampolim
+            ← MatchJobs
           </Link>
           <h1 className="mt-1 truncate font-[family-name:var(--font-display)] text-2xl font-black">
             <span className="grad-text">{titulo}</span>

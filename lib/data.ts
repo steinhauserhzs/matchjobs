@@ -69,7 +69,7 @@ export const EMOJIS_AVATAR = ["🚀", "🔥", "⚡", "🦾", "🎯", "🧠", "�
 
 /** Selos de empresa (confiança/qualidade). */
 export const SELOS: Record<string, { nome: string; icone: string; cor: string; desc: string }> = {
-  verificada: { nome: "Verificada", icone: "✓", cor: "#4da6ff", desc: "CNPJ e presença confirmados pela equipe Trampolim" },
+  verificada: { nome: "Verificada", icone: "✓", cor: "#4da6ff", desc: "CNPJ e presença confirmados pela equipe MatchJobs" },
   "top-empregadora": { nome: "Top Empregadora", icone: "🏆", cor: "#c8ff16", desc: "Entre as mais curtidas pelos candidatos" },
   "resposta-rapida": { nome: "Resposta Rápida", icone: "⚡", cor: "#ff5c39", desc: "Responde matches em menos de 24h" },
   diversidade: { nome: "Diversidade+", icone: "🌈", cor: "#b18cff", desc: "Compromisso público com inclusão" },

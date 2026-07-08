@@ -36,7 +36,7 @@ const talentoRows = talentos.map(
 );
 
 const sql = `-- Gerado por scripts/gen-seed-sql.mjs — não editar na mão.
-insert into public.trampolim_vagas
+insert into public.matchjobs_vagas
   (id, empresa_id, empresa, logo, cor, cargo, area, senioridade, salario_min,
    salario_max, modelo, cidade, skills, descricao, beneficios, ativa)
 values
@@ -50,7 +50,7 @@ on conflict (id) do update set
   descricao = excluded.descricao, beneficios = excluded.beneficios,
   ativa = excluded.ativa;
 
-insert into public.trampolim_empresas
+insert into public.matchjobs_empresas
   (id, nome, logo, cor, setor, cidade, tamanho, slogan, sobre, selos)
 values
 ${empresaRows.join(",\n")}
@@ -59,7 +59,7 @@ on conflict (id) do update set
   setor = excluded.setor, cidade = excluded.cidade, tamanho = excluded.tamanho,
   slogan = excluded.slogan, sobre = excluded.sobre, selos = excluded.selos;
 
-insert into public.trampolim_talentos
+insert into public.matchjobs_talentos
   (id, nome, emoji, headline, area, senioridade, cidade, modelo, pretensao,
    skills, bio, disponivel)
 values

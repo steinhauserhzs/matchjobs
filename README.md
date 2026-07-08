@@ -1,11 +1,11 @@
-# 🤸 Trampolim — deslize pro trampo certo
+# 🤸 MatchJobs — deslize pro trampo certo
 
 > **O Tinder das vagas.** Deslize, dê match e converse com quem quer te contratar.
 > Chega de formulário de 40 minutos, currículo em PDF e "manteremos seu cadastro em nosso banco de talentos".
 
 **v2 — plataforma completa** · Next.js 16 + Tailwind v4 · PWA mobile-first · 4 portais · pronto para Supabase
 
-**🔗 LIVE:** https://trampolim-two.vercel.app · Portais: [/empresa](https://trampolim-two.vercel.app/empresa) · [/hunter](https://trampolim-two.vercel.app/hunter) · [/admin](https://trampolim-two.vercel.app/admin)
+**🔗 LIVE:** https://matchjobs-two.vercel.app · Portais: [/empresa](https://matchjobs-two.vercel.app/empresa) · [/hunter](https://matchjobs-two.vercel.app/hunter) · [/admin](https://matchjobs-two.vercel.app/admin)
 
 ---
 
@@ -13,7 +13,7 @@
 
 InfoJobs, Gupy, Catho e afins tratam candidatura como burocracia:
 
-| Modelo tradicional | Trampolim |
+| Modelo tradicional | MatchJobs |
 |---|---|
 | Formulário de 40 min por vaga | Perfil único de 1 minuto |
 | Currículo PDF que ninguém lê | Skills estruturadas que geram score |
@@ -69,7 +69,7 @@ lib/
   store.ts      → camada de dados com DOIS adapters (ver abaixo)
   seed-data.json→ fonte única das vagas seed
 supabase/
-  migrations/   → schema completo com RLS (trampolim_*)
+  migrations/   → schema completo com RLS (matchjobs_*)
   seed.sql      → gerado por scripts/gen-seed-sql.mjs
 ```
 
@@ -81,7 +81,7 @@ O `Store` é uma interface única com duas implementações:
 - **SupabaseStore** — ativa automaticamente quando `NEXT_PUBLIC_SUPABASE_URL` e `NEXT_PUBLIC_SUPABASE_ANON_KEY` existem.
 
 **Para ligar o modo nuvem** (2 minutos):
-1. Crie um projeto free no Supabase (a org `trampolim` já existe; é preciso liberar um slot free — pausar um projeto antigo — ou usar plano pago).
+1. Crie um projeto free no Supabase (a org `matchjobs` já existe; é preciso liberar um slot free — pausar um projeto antigo — ou usar plano pago).
 2. Aplique `supabase/migrations/*.sql` e depois `supabase/seed.sql` (SQL Editor ou `supabase db push`).
 3. Preencha as duas variáveis no Vercel e redeploy. Pronto.
 

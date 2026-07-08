@@ -14,7 +14,7 @@ import {
   Stat,
 } from "@/components/ui";
 
-const K_CONVITES = "trampolim:convites_hunter";
+const K_CONVITES = "matchjobs:convites_hunter";
 type Modo = "explorar" | "shortlist";
 
 interface Convite {

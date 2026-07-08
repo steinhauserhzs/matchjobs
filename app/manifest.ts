@@ -2,8 +2,8 @@ import type { MetadataRoute } from "next";
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: "Trampolim — deslize pro trampo certo",
-    short_name: "Trampolim",
+    name: "MatchJobs — deslize pro trampo certo",
+    short_name: "MatchJobs",
     description:
       "O Tinder das vagas: deslize, dê match e converse com quem quer te contratar.",
     start_url: "/",

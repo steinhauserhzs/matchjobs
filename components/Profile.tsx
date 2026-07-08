@@ -236,7 +236,7 @@ export default function ProfileView({
       </div>
 
       <p className="mt-6 text-center text-[10px] text-muted/60">
-        Trampolim v2 · dados no modo <span className="font-bold">{MODO_DADOS}</span> ·
+        MatchJobs v2 · dados no modo <span className="font-bold">{MODO_DADOS}</span> ·
         feito com 🔥 no Brasil
       </p>
 

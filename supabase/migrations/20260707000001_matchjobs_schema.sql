@@ -1,5 +1,5 @@
 -- ============================================================
--- TRAMPOLIM — "Tinder de empregos"
+-- MATCHJOBS — "Tinder de empregos"
 -- Schema espelhado em lib/types.ts. Aplicar num projeto Supabase
 -- dedicado (free tier) e definir NEXT_PUBLIC_SUPABASE_URL +
 -- NEXT_PUBLIC_SUPABASE_ANON_KEY para ativar o modo nuvem.
@@ -11,7 +11,7 @@
 -- ============================================================
 create extension if not exists pgcrypto;
 
-create table if not exists public.trampolim_vagas (
+create table if not exists public.matchjobs_vagas (
   id uuid primary key default gen_random_uuid(),
   empresa text not null,
   logo text not null default '🏢',
@@ -30,7 +30,7 @@ create table if not exists public.trampolim_vagas (
   created_at timestamptz not null default now()
 );
 
-create table if not exists public.trampolim_profiles (
+create table if not exists public.matchjobs_profiles (
   id uuid primary key,
   nome text not null default '',
   area text not null default '',
@@ -44,10 +44,10 @@ create table if not exists public.trampolim_profiles (
   updated_at timestamptz not null default now()
 );
 
-create table if not exists public.trampolim_swipes (
+create table if not exists public.matchjobs_swipes (
   id uuid primary key default gen_random_uuid(),
   user_id uuid not null,
-  vaga_id uuid not null references public.trampolim_vagas(id) on delete cascade,
+  vaga_id uuid not null references public.matchjobs_vagas(id) on delete cascade,
   direcao text not null check (direcao in ('like','nope','super')),
   score int not null default 0,
   matched boolean not null default false,
@@ -56,37 +56,37 @@ create table if not exists public.trampolim_swipes (
   unique (user_id, vaga_id)
 );
 
-create table if not exists public.trampolim_mensagens (
+create table if not exists public.matchjobs_mensagens (
   id uuid primary key default gen_random_uuid(),
-  swipe_id uuid not null references public.trampolim_swipes(id) on delete cascade,
+  swipe_id uuid not null references public.matchjobs_swipes(id) on delete cascade,
   autor text not null check (autor in ('candidato','empresa')),
   texto text not null,
   created_at timestamptz not null default now()
 );
 
-create index if not exists trampolim_swipes_user_idx on public.trampolim_swipes(user_id);
-create index if not exists trampolim_mensagens_swipe_idx on public.trampolim_mensagens(swipe_id);
-create index if not exists trampolim_vagas_ativa_idx on public.trampolim_vagas(ativa);
+create index if not exists matchjobs_swipes_user_idx on public.matchjobs_swipes(user_id);
+create index if not exists matchjobs_mensagens_swipe_idx on public.matchjobs_mensagens(swipe_id);
+create index if not exists matchjobs_vagas_ativa_idx on public.matchjobs_vagas(ativa);
 
-alter table public.trampolim_vagas enable row level security;
-alter table public.trampolim_profiles enable row level security;
-alter table public.trampolim_swipes enable row level security;
-alter table public.trampolim_mensagens enable row level security;
+alter table public.matchjobs_vagas enable row level security;
+alter table public.matchjobs_profiles enable row level security;
+alter table public.matchjobs_swipes enable row level security;
+alter table public.matchjobs_mensagens enable row level security;
 
 -- Vagas: somente leitura pública; escrita apenas via service role.
-drop policy if exists trampolim_vagas_read on public.trampolim_vagas;
-create policy trampolim_vagas_read on public.trampolim_vagas
+drop policy if exists matchjobs_vagas_read on public.matchjobs_vagas;
+create policy matchjobs_vagas_read on public.matchjobs_vagas
   for select to anon, authenticated using (ativa);
 
 -- MVP demo: escrita aberta nas tabelas do candidato (sem auth).
-drop policy if exists trampolim_profiles_rw on public.trampolim_profiles;
-create policy trampolim_profiles_rw on public.trampolim_profiles
+drop policy if exists matchjobs_profiles_rw on public.matchjobs_profiles;
+create policy matchjobs_profiles_rw on public.matchjobs_profiles
   for all to anon, authenticated using (true) with check (true);
 
-drop policy if exists trampolim_swipes_rw on public.trampolim_swipes;
-create policy trampolim_swipes_rw on public.trampolim_swipes
+drop policy if exists matchjobs_swipes_rw on public.matchjobs_swipes;
+create policy matchjobs_swipes_rw on public.matchjobs_swipes
   for all to anon, authenticated using (true) with check (true);
 
-drop policy if exists trampolim_mensagens_rw on public.trampolim_mensagens;
-create policy trampolim_mensagens_rw on public.trampolim_mensagens
+drop policy if exists matchjobs_mensagens_rw on public.matchjobs_mensagens;
+create policy matchjobs_mensagens_rw on public.matchjobs_mensagens
   for all to anon, authenticated using (true) with check (true);

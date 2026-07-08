@@ -45,14 +45,14 @@ export interface Store {
 }
 
 const K = {
-  profile: "trampolim:profile",
-  swipes: "trampolim:swipes",
-  msgs: "trampolim:mensagens",
-  badges: "trampolim:badges",
-  vagasCustom: "trampolim:vagas_custom",
-  vagasPatch: "trampolim:vagas_patch",
-  shortlist: "trampolim:shortlist",
-  likesEmpresa: "trampolim:likes_empresa",
+  profile: "matchjobs:profile",
+  swipes: "matchjobs:swipes",
+  msgs: "matchjobs:mensagens",
+  badges: "matchjobs:badges",
+  vagasCustom: "matchjobs:vagas_custom",
+  vagasPatch: "matchjobs:vagas_patch",
+  shortlist: "matchjobs:shortlist",
+  likesEmpresa: "matchjobs:likes_empresa",
 };
 
 function lsGet<T>(key: string, fallback: T): T {
@@ -220,7 +220,7 @@ class SupabaseStore extends LocalStore {
   override async getVagas(): Promise<Vaga[]> {
     const supa = await this.client();
     const { data, error } = await supa
-      .from("trampolim_vagas")
+      .from("matchjobs_vagas")
       .select("*")
       .eq("ativa", true);
     if (error) throw error;
@@ -230,7 +230,7 @@ class SupabaseStore extends LocalStore {
   override async getProfile(): Promise<Profile | null> {
     const supa = await this.client();
     const { data } = await supa
-      .from("trampolim_profiles")
+      .from("matchjobs_profiles")
       .select("*")
       .eq("id", deviceId())
       .maybeSingle();
@@ -240,7 +240,7 @@ class SupabaseStore extends LocalStore {
   override async saveProfile(p: Profile): Promise<void> {
     const supa = await this.client();
     const { error } = await supa
-      .from("trampolim_profiles")
+      .from("matchjobs_profiles")
       .upsert({ ...p, id: deviceId(), updated_at: new Date().toISOString() });
     if (error) throw error;
   }
@@ -248,7 +248,7 @@ class SupabaseStore extends LocalStore {
   override async getSwipes(): Promise<Swipe[]> {
     const supa = await this.client();
     const { data, error } = await supa
-      .from("trampolim_swipes")
+      .from("matchjobs_swipes")
       .select("*")
       .eq("user_id", deviceId());
     if (error) throw error;
@@ -260,7 +260,7 @@ class SupabaseStore extends LocalStore {
   ): Promise<Swipe> {
     const supa = await this.client();
     const { data, error } = await supa
-      .from("trampolim_swipes")
+      .from("matchjobs_swipes")
       .upsert({ ...s, user_id: deviceId() }, { onConflict: "user_id,vaga_id" })
       .select()
       .single();
@@ -270,18 +270,18 @@ class SupabaseStore extends LocalStore {
 
   override async removeSwipe(id: string): Promise<void> {
     const supa = await this.client();
-    await supa.from("trampolim_swipes").delete().eq("id", id);
+    await supa.from("matchjobs_swipes").delete().eq("id", id);
   }
 
   override async resetSwipes(): Promise<void> {
     const supa = await this.client();
-    await supa.from("trampolim_swipes").delete().eq("user_id", deviceId());
+    await supa.from("matchjobs_swipes").delete().eq("user_id", deviceId());
   }
 
   override async getMensagens(swipeId: string): Promise<Mensagem[]> {
     const supa = await this.client();
     const { data, error } = await supa
-      .from("trampolim_mensagens")
+      .from("matchjobs_mensagens")
       .select("*")
       .eq("swipe_id", swipeId)
       .order("created_at");
@@ -294,7 +294,7 @@ class SupabaseStore extends LocalStore {
   ): Promise<Mensagem> {
     const supa = await this.client();
     const { data, error } = await supa
-      .from("trampolim_mensagens")
+      .from("matchjobs_mensagens")
       .insert(m)
       .select()
       .single();
@@ -305,10 +305,10 @@ class SupabaseStore extends LocalStore {
   override async clearAll(): Promise<void> {
     const supa = await this.client();
     const uid = deviceId();
-    await supa.from("trampolim_swipes").delete().eq("user_id", uid);
-    await supa.from("trampolim_profiles").delete().eq("id", uid);
+    await supa.from("matchjobs_swipes").delete().eq("user_id", uid);
+    await supa.from("matchjobs_profiles").delete().eq("id", uid);
     await super.clearAll();
-    localStorage.removeItem("trampolim:device_id");
+    localStorage.removeItem("matchjobs:device_id");
   }
 }
 

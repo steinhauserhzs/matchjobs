@@ -155,7 +155,7 @@ export default function PortalAdmin() {
     <PortalShell
       portal="admin"
       titulo="Torre de Controle"
-      sub="Métricas e gestão do Trampolim (dados reais deste dispositivo)"
+      sub="Métricas e gestão do MatchJobs (dados reais deste dispositivo)"
     >
       <div className="mb-5 flex flex-wrap gap-2">
         {(
