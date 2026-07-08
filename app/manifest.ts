@@ -2,28 +2,45 @@ import type { MetadataRoute } from "next";
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
+    id: "/",
     name: "MatchJobs — deslize pro trampo certo",
     short_name: "MatchJobs",
     description:
       "O Tinder das vagas: deslize, dê match e converse com quem quer te contratar.",
     start_url: "/",
+    scope: "/",
     display: "standalone",
     background_color: "#0a0a10",
     theme_color: "#0a0a10",
     orientation: "portrait",
     lang: "pt-BR",
+    categories: ["business", "productivity"],
     icons: [
+      { src: "/icon-192.png", sizes: "192x192", type: "image/png", purpose: "any" },
+      { src: "/icon-512.png", sizes: "512x512", type: "image/png", purpose: "any" },
       {
-        src: "/icon.svg",
-        sizes: "any",
-        type: "image/svg+xml",
-        purpose: "any",
+        src: "/icon-maskable-512.png",
+        sizes: "512x512",
+        type: "image/png",
+        purpose: "maskable",
+      },
+      { src: "/icon.svg", sizes: "any", type: "image/svg+xml", purpose: "any" },
+    ],
+    shortcuts: [
+      {
+        name: "Portal da Empresa",
+        url: "/empresa",
+        icons: [{ src: "/icon-192.png", sizes: "192x192" }],
       },
       {
-        src: "/icon-maskable.svg",
-        sizes: "any",
-        type: "image/svg+xml",
-        purpose: "maskable",
+        name: "Radar do Hunter",
+        url: "/hunter",
+        icons: [{ src: "/icon-192.png", sizes: "192x192" }],
+      },
+      {
+        name: "Torre de Controle",
+        url: "/admin",
+        icons: [{ src: "/icon-192.png", sizes: "192x192" }],
       },
     ],
   };

@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Unbounded, Sora } from "next/font/google";
+import PwaSetup from "@/components/PwaSetup";
 import "./globals.css";
 
 const display = Unbounded({
@@ -19,6 +20,13 @@ export const metadata: Metadata = {
   description:
     "O Tinder das vagas: deslize, dê match e converse com quem quer te contratar. Chega de formulário infinito.",
   applicationName: "MatchJobs",
+  icons: {
+    icon: [
+      { url: "/icon.svg", type: "image/svg+xml" },
+      { url: "/icon-192.png", sizes: "192x192", type: "image/png" },
+    ],
+    apple: "/apple-touch-icon.png",
+  },
   appleWebApp: {
     capable: true,
     statusBarStyle: "black-translucent",
@@ -45,7 +53,10 @@ export default function RootLayout({
 }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="pt-BR" className={`${display.variable} ${sora.variable}`}>
-      <body>{children}</body>
+      <body>
+        {children}
+        <PwaSetup />
+      </body>
     </html>
   );
 }
