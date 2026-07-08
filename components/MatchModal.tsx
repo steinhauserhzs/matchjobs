@@ -2,36 +2,48 @@
 
 import { useMemo } from "react";
 import type { Vaga } from "@/lib/types";
+import { Avatar, ScoreRing } from "./ui";
 
-const CORES = ["#c8ff16", "#ff5c39", "#4da6ff", "#ff4d6d", "#f4f4f8"];
+const CORES = ["#c8ff16", "#ff5c39", "#4da6ff", "#ff4d6d", "#f4f4f8", "#ffd24d", "#b18cff"];
 
 export default function MatchModal({
   vaga,
   emojiUsuario,
+  fotoUsuario,
   score,
   onMensagem,
   onContinuar,
 }: {
   vaga: Vaga;
   emojiUsuario: string;
+  fotoUsuario?: string;
   score: number;
   onMensagem: () => void;
   onContinuar: () => void;
 }) {
   const confetes = useMemo(
     () =>
-      Array.from({ length: 28 }, (_, i) => ({
-        left: `${(i * 37) % 100}%`,
-        delay: `${(i % 9) * 0.12}s`,
-        dur: `${2 + ((i * 13) % 10) / 6}s`,
+      Array.from({ length: 40 }, (_, i) => ({
+        left: `${(i * 29) % 100}%`,
+        delay: `${(i % 11) * 0.11}s`,
+        dur: `${1.9 + ((i * 17) % 12) / 6}s`,
         cor: CORES[i % CORES.length],
-        w: 6 + ((i * 7) % 8),
+        w: 5 + ((i * 7) % 9),
       })),
     [],
   );
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-bg/85 backdrop-blur-md">
+      {/* anéis expansivos */}
+      {[0, 0.4, 0.8].map((d) => (
+        <span
+          key={d}
+          className="pointer-events-none absolute h-48 w-48 rounded-full border-2 border-volt/60"
+          style={{ animation: `ring-pop 1.8s ease-out ${d}s infinite` }}
+        />
+      ))}
+
       {/* confete */}
       {confetes.map((c, i) => (
         <span
@@ -47,8 +59,8 @@ export default function MatchModal({
         />
       ))}
 
-      <div className="anim-pop relative mx-6 w-full max-w-sm rounded-3xl border border-volt/30 bg-card p-7 text-center shadow-[0_0_80px_rgba(200,255,22,0.25)]">
-        <p className="font-[family-name:var(--font-display)] text-[34px] font-black leading-none text-volt">
+      <div className="anim-pop shine relative mx-6 w-full max-w-sm rounded-3xl border border-volt/30 bg-card p-7 text-center shadow-[0_0_90px_rgba(200,255,22,0.28)]">
+        <p className="grad-text font-[family-name:var(--font-display)] text-[36px] font-black leading-none">
           DEU
           <br />
           MATCH!
@@ -59,18 +71,15 @@ export default function MatchModal({
           <span className="font-bold text-ink">{vaga.cargo}</span>
         </p>
 
-        <div className="mt-6 flex items-center justify-center gap-[-8px]">
-          <div className="anim-float flex h-20 w-20 items-center justify-center rounded-full border-2 border-volt bg-bg2 text-4xl">
-            {emojiUsuario}
+        <div className="mt-6 flex items-center justify-center">
+          <div className="anim-float">
+            <Avatar foto={fotoUsuario} emoji={emojiUsuario} size={80} className="rounded-full" />
           </div>
-          <div className="z-10 -mx-3 flex h-10 w-10 items-center justify-center rounded-full bg-volt text-lg font-black text-bg">
-            {score}%
+          <div className="z-10 -mx-4">
+            <ScoreRing score={score} size={62} stroke={6} />
           </div>
-          <div
-            className="anim-float flex h-20 w-20 items-center justify-center rounded-full border-2 bg-bg2 text-4xl"
-            style={{ borderColor: vaga.cor, animationDelay: "0.4s" }}
-          >
-            {vaga.logo}
+          <div className="anim-float" style={{ animationDelay: "0.4s" }}>
+            <Avatar emoji={vaga.logo} size={80} cor={vaga.cor} className="rounded-full" />
           </div>
         </div>
 

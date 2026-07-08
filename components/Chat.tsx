@@ -3,6 +3,18 @@
 import { useEffect, useRef, useState } from "react";
 import type { Mensagem, Swipe, Vaga } from "@/lib/types";
 import { store } from "@/lib/store";
+import { Avatar, ScoreRing } from "./ui";
+
+function hora(iso: string): string {
+  try {
+    return new Date(iso).toLocaleTimeString("pt-BR", {
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+  } catch {
+    return "";
+  }
+}
 
 export default function Chat({
   swipe,
@@ -15,15 +27,18 @@ export default function Chat({
 }) {
   const [mensagens, setMensagens] = useState<Mensagem[]>([]);
   const [texto, setTexto] = useState("");
+  const [digitando, setDigitando] = useState(false);
   const fim = useRef<HTMLDivElement>(null);
+  const input = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     store.getMensagens(swipe.id).then(setMensagens);
+    setTimeout(() => input.current?.focus(), 350);
   }, [swipe.id]);
 
   useEffect(() => {
     fim.current?.scrollIntoView({ behavior: "smooth" });
-  }, [mensagens.length]);
+  }, [mensagens.length, digitando]);
 
   async function enviar() {
     const t = texto.trim();
@@ -36,25 +51,28 @@ export default function Chat({
     });
     setMensagens((prev) => [...prev, minha]);
 
-    // resposta simulada do RH (uma única vez, para dar vida à demo)
+    // resposta simulada do RH (uma única vez, com "digitando…")
     const jaRespondeu =
       mensagens.filter((m) => m.autor === "empresa").length >= 2;
     if (!jaRespondeu) {
+      setTimeout(() => setDigitando(true), 700);
       setTimeout(async () => {
+        setDigitando(false);
         const resposta = await store.addMensagem({
           swipe_id: swipe.id,
           autor: "empresa",
-          texto: `Fechado! Que tal quinta às 15h? Te mando o convite. Qualquer coisa me chama aqui 😉`,
+          texto:
+            "Fechado! Que tal quinta às 15h? Te mando o convite. Qualquer coisa me chama aqui 😉",
         });
         setMensagens((prev) => [...prev, resposta]);
-      }, 1400);
+      }, 2300);
     }
   }
 
   return (
     <div className="fixed inset-0 z-50 mx-auto flex max-w-md flex-col bg-bg">
       {/* header */}
-      <div className="flex items-center gap-3 border-b border-line bg-bg2/80 px-4 pb-3 pt-[calc(env(safe-area-inset-top)+0.75rem)] backdrop-blur-xl">
+      <div className="glass flex items-center gap-3 px-4 pb-3 pt-[calc(env(safe-area-inset-top)+0.75rem)]">
         <button
           onClick={onVoltar}
           aria-label="Voltar"
@@ -70,43 +88,60 @@ export default function Chat({
             />
           </svg>
         </button>
-        <div
-          className="flex h-10 w-10 items-center justify-center rounded-xl text-xl"
-          style={{ background: `${vaga.cor}22`, border: `1px solid ${vaga.cor}55` }}
-        >
-          {vaga.logo}
-        </div>
+        <Avatar emoji={vaga.logo} cor={vaga.cor} size={40} />
         <div className="min-w-0 flex-1">
           <p className="truncate text-sm font-bold">{vaga.empresa}</p>
           <p className="truncate text-[11px] text-muted">
             {vaga.cargo} · RH (simulação)
           </p>
         </div>
-        <span className="rounded-full bg-volt px-2 py-0.5 text-[10px] font-black text-bg">
-          {swipe.score}%
-        </span>
+        <ScoreRing score={swipe.score} size={38} stroke={4} />
       </div>
 
       {/* mensagens */}
       <div className="flex-1 space-y-2.5 overflow-y-auto px-4 py-4">
-        {mensagens.map((m) => (
-          <div
-            key={m.id}
-            className={`max-w-[80%] rounded-2xl px-4 py-2.5 text-[14px] leading-relaxed ${
-              m.autor === "candidato"
-                ? "ml-auto rounded-br-md bg-volt text-bg"
-                : "rounded-bl-md border border-line bg-card text-ink"
-            }`}
-          >
-            {m.texto}
+        {mensagens.map((m) => {
+          const minha = m.autor === "candidato";
+          return (
+            <div
+              key={m.id}
+              className={`anim-rise max-w-[80%] px-4 py-2.5 text-[14px] leading-relaxed ${
+                minha
+                  ? "ml-auto rounded-[18px_18px_4px_18px] bg-volt text-bg"
+                  : "rounded-[18px_18px_18px_4px] border border-line bg-card text-ink"
+              }`}
+            >
+              {m.texto}
+              <span
+                className={`mt-1 block text-right text-[9px] ${
+                  minha ? "text-bg/60" : "text-muted/60"
+                }`}
+              >
+                {hora(m.created_at)}
+              </span>
+            </div>
+          );
+        })}
+        {digitando && (
+          <div className="anim-pop flex w-fit items-center gap-1 rounded-[18px_18px_18px_4px] border border-line bg-card px-4 py-3">
+            {[0, 1, 2].map((i) => (
+              <span
+                key={i}
+                className="h-1.5 w-1.5 rounded-full bg-muted"
+                style={{
+                  animation: `float-slow 0.9s ease-in-out ${i * 0.15}s infinite`,
+                }}
+              />
+            ))}
           </div>
-        ))}
+        )}
         <div ref={fim} />
       </div>
 
       {/* input */}
-      <div className="flex items-center gap-2 border-t border-line bg-bg2/80 px-4 pb-[calc(env(safe-area-inset-bottom)+0.75rem)] pt-3 backdrop-blur-xl">
+      <div className="glass flex items-center gap-2 px-4 pb-[calc(env(safe-area-inset-bottom)+0.75rem)] pt-3">
         <input
+          ref={input}
           value={texto}
           onChange={(e) => setTexto(e.target.value)}
           onKeyDown={(e) => e.key === "Enter" && enviar()}

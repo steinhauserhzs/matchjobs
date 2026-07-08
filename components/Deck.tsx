@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
-import type { Direcao, ScoreResult, Vaga } from "@/lib/types";
+import type { Direcao, Empresa, ScoreResult, Vaga } from "@/lib/types";
 import JobCard from "./JobCard";
 
 export interface Carta {
@@ -16,13 +16,16 @@ export default function Deck({
   onSwipe,
   onRewind,
   podeRewind,
+  empresas,
 }: {
   cartas: Carta[];
   onSwipe: (vaga: Vaga, direcao: Direcao, score: ScoreResult) => void;
   onRewind: () => void;
   podeRewind: boolean;
+  empresas?: Record<string, Empresa>;
 }) {
   const [drag, setDrag] = useState({ dx: 0, dy: 0, ativo: false });
+  const [glare, setGlare] = useState({ gx: 50, gy: 25 });
   const [saindo, setSaindo] = useState<Direcao | null>(null);
   const inicio = useRef<{ x: number; y: number } | null>(null);
 
@@ -35,6 +38,7 @@ export default function Deck({
       onSwipe(topo.vaga, direcao, topo.score);
       setSaindo(null);
       setDrag({ dx: 0, dy: 0, ativo: false });
+      setGlare({ gx: 50, gy: 25 });
     }, 320);
   }
 
@@ -52,6 +56,12 @@ export default function Deck({
       dy: e.clientY - inicio.current.y,
       ativo: true,
     });
+    const alvo = e.currentTarget as HTMLElement;
+    const r = alvo.getBoundingClientRect();
+    setGlare({
+      gx: Math.round(((e.clientX - r.left) / r.width) * 100),
+      gy: Math.round(((e.clientY - r.top) / r.height) * 100),
+    });
   }
 
   function pointerUp() {
@@ -60,20 +70,24 @@ export default function Deck({
     inicio.current = null;
     if (dx > LIMIAR) lancar("like");
     else if (dx < -LIMIAR) lancar("nope");
-    else setDrag({ dx: 0, dy: 0, ativo: false });
+    else {
+      setDrag({ dx: 0, dy: 0, ativo: false });
+      setGlare({ gx: 50, gy: 25 });
+    }
   }
 
   function transformTopo(): string {
     if (saindo === "like") return "translate(120vw, -8vh) rotate(28deg)";
     if (saindo === "nope") return "translate(-120vw, -8vh) rotate(-28deg)";
-    if (saindo === "super") return "translate(0, -130vh) rotate(-8deg) scale(1.05)";
-    return `translate(${drag.dx}px, ${drag.dy * 0.35}px) rotate(${drag.dx * 0.055}deg)`;
+    if (saindo === "super")
+      return "translate(0, -130vh) rotate(-8deg) scale(1.05)";
+    return `translate(${drag.dx}px, ${drag.dy * 0.35}px) rotate(${drag.dx * 0.055}deg) rotateY(${drag.dx * -0.03}deg)`;
   }
 
   if (!topo) return null;
 
   return (
-    <div className="flex h-full flex-col">
+    <div className="flex h-full flex-col" style={{ perspective: "1200px" }}>
       {/* pilha */}
       <div className="relative min-h-0 flex-1">
         {cartas.slice(0, 3).map((carta, i) => {
@@ -87,13 +101,16 @@ export default function Deck({
                 transform: ehTopo
                   ? transformTopo()
                   : `translateY(${i * 13}px) scale(${1 - i * 0.045})`,
-                opacity: ehTopo ? 1 : 1 - i * 0.25,
+                opacity: ehTopo ? 1 : 1 - i * 0.28,
+                filter: ehTopo ? "none" : `blur(${i * 0.8}px) saturate(0.85)`,
                 transition:
                   ehTopo && drag.ativo
                     ? "none"
-                    : "transform 0.32s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.32s ease",
+                    : "transform 0.34s cubic-bezier(0.34, 1.4, 0.5, 1), opacity 0.3s ease, filter 0.3s ease",
                 touchAction: "none",
                 cursor: ehTopo ? "grab" : "default",
+                ["--gx" as string]: `${ehTopo ? glare.gx : 50}%`,
+                ["--gy" as string]: `${ehTopo ? glare.gy : 25}%`,
               }}
               onPointerDown={ehTopo ? pointerDown : undefined}
               onPointerMove={ehTopo ? pointerMove : undefined}
@@ -106,6 +123,11 @@ export default function Deck({
                 dx={ehTopo ? drag.dx : 0}
                 leaving={ehTopo ? saindo : null}
                 topo={ehTopo}
+                empresa={
+                  carta.vaga.empresa_id
+                    ? empresas?.[carta.vaga.empresa_id]
+                    : undefined
+                }
               />
             </div>
           );
@@ -134,7 +156,7 @@ export default function Deck({
         <button
           onClick={() => lancar("nope")}
           aria-label="Passar vaga"
-          className="flex h-16 w-16 items-center justify-center rounded-full border-2 border-rosa/60 bg-card text-rosa transition active:scale-90"
+          className="flex h-16 w-16 items-center justify-center rounded-full border-2 border-rosa/60 bg-card text-rosa transition hover:bg-rosa/10 active:scale-90"
         >
           <svg width="26" height="26" viewBox="0 0 24 24" fill="none">
             <path
@@ -149,7 +171,7 @@ export default function Deck({
         <button
           onClick={() => lancar("super")}
           aria-label="Super interesse"
-          className="flex h-12 w-12 items-center justify-center rounded-full border-2 border-azul/60 bg-card text-azul transition active:scale-90"
+          className="flex h-12 w-12 items-center justify-center rounded-full border-2 border-azul/60 bg-card text-azul transition hover:bg-azul/10 active:scale-90"
         >
           <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
             <path d="m12 2 2.9 6.3 6.9.8-5.1 4.7 1.4 6.8L12 17.2l-6.1 3.4 1.4-6.8L2.2 9.1l6.9-.8L12 2Z" />
