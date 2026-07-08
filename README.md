@@ -3,7 +3,9 @@
 > **O Tinder das vagas.** Deslize, dê match e converse com quem quer te contratar.
 > Chega de formulário de 40 minutos, currículo em PDF e "manteremos seu cadastro em nosso banco de talentos".
 
-**MVP funcional** · Next.js 16 + Tailwind v4 · PWA mobile-first · pronto para Supabase
+**v2 — plataforma completa** · Next.js 16 + Tailwind v4 · PWA mobile-first · 4 portais · pronto para Supabase
+
+**🔗 LIVE:** https://trampolim-two.vercel.app · Portais: [/empresa](https://trampolim-two.vercel.app/empresa) · [/hunter](https://trampolim-two.vercel.app/hunter) · [/admin](https://trampolim-two.vercel.app/admin)
 
 ---
 
@@ -21,7 +23,30 @@ InfoJobs, Gupy, Catho e afins tratam candidatura como burocracia:
 
 A tese: **procurar emprego deveria ter a fricção de um app de namoro, não a de um cartório.**
 
-## 2. O produto (o que já funciona neste MVP)
+## 2. O produto (o que já funciona nesta v2)
+
+### 👤 Candidato (/)
+- **Onboarding em 6 passos** com foto (comprimida no dispositivo), headline, bio, contato (e-mail/WhatsApp/LinkedIn), experiências, formação e idiomas
+- **Importar CV (PDF/TXT)**: parsing 100% client-side (pdf.js + heurísticas) — detecta nome, contatos, skills, experiências e formação; o usuário revisa antes de aplicar. Privacidade total: nada sai do aparelho
+- **22 áreas** — de Tecnologia e Segurança a Gastronomia, Construção, Saúde, Agro, Beleza e Turismo; **80 vagas seed** com salários realistas BR 2026
+- **Deck com física premium**: tilt 3D, glare que segue o dedo, carimbos com blur, ScoreRing animado, selos da empresa no card
+- **11 badges** (bronze→diamante) com modal de conquista cinematográfico; galeria no perfil
+- Match modal com anéis expansivos + confete; chat com indicador "digitando…"
+
+### 🏢 Empresa (/empresa)
+- Seleção de empresa (39 seed com **5 selos de confiança**: Verificada, Top Empregadora, Resposta Rápida, Diversidade+, Contratação Ágil)
+- Dashboard com KPIs, **publicar/pausar vagas** (form completo), fila de candidatos com score por vaga e **curtir de volta** (match-back)
+- Os likes do candidato local aparecem na fila da empresa em destaque 🔥
+
+### 🎯 Hunter (/hunter)
+- Radar de 36 talentos de todas as áreas com filtros (área/senioridade/modelo/busca)
+- **Vaga-alvo**: pontua e ordena talentos por aderência; shortlist ❤️ e convites 📨
+
+### 🛠️ Admin (/admin)
+- Torre de Controle: KPIs, sparkline de swipes (14 dias), vagas por área e salário médio (gráficos SVG/CSS puros)
+- Gestão de vagas (ativar/pausar), diretório de empresas com selos, status de badges
+
+### Detalhes v1 que continuam
 
 - **Onboarding gamificado (1 min)**: nome + avatar emoji, área, senioridade, 3–8 skills, pretensão salarial (slider), modelo de trabalho e cidade. Sem e-mail, sem senha.
 - **Deck de vagas estilo Tinder**: swipe direita = *QUERO!*, esquerda = *PASSO*, botão estrela = *É ESSE!* (super interesse). Física de arrasto nativa (pointer events), carimbos animados, rewind ↩️ do último swipe.
@@ -101,4 +126,4 @@ Next.js 16 (App Router, Turbopack) · React 19 · Tailwind CSS v4 · TypeScript 
 
 ---
 
-Feito com 🔥 no Brasil. MVP gerado em uma sessão de vibe-coding com Claude.
+Hero art gerada com Higgsfield (Nano Banana 2). Feito com 🔥 no Brasil em sessões de vibe-coding com Claude.
