@@ -5,7 +5,7 @@
 
 **v2 — plataforma completa** · Next.js 16 + Tailwind v4 · PWA mobile-first · 4 portais · pronto para Supabase
 
-**🔗 LIVE:** https://matchjobs-two.vercel.app · Portais: [/empresa](https://matchjobs-two.vercel.app/empresa) · [/hunter](https://matchjobs-two.vercel.app/hunter) · [/admin](https://matchjobs-two.vercel.app/admin)
+**🔗 LIVE:** https://matchjobs-one.vercel.app · Portais: [/empresa](https://matchjobs-one.vercel.app/empresa) · [/hunter](https://matchjobs-one.vercel.app/hunter) · [/admin](https://matchjobs-one.vercel.app/admin)
 
 ---
 
